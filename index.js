@@ -59,8 +59,17 @@ async function run() {
         const data=req.body
         console.log(data)
         const objectId = new ObjectId(id);
+        const filter={_id:objectId}
+        const update={
+            $set:data
+        }
         
-      const result = await modelCollection.updateOne();
+      const result = await modelCollection.updateOne(filter,update);
+      res.send({
+        success:true,
+        result,
+
+      })
         
     })
 
