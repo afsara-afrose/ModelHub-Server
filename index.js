@@ -72,6 +72,15 @@ async function run() {
       })
         
     })
+    //my model page 
+    app.get('/my-models',async(req,res)=>{
+        const email=req.query.email
+        const result =await modelCollection.find({createdBy:email}).toArray()
+        res.send({
+            success:true,
+            result
+         })
+    })
 
     //Delete Model
     app.delete('/models/:id',async(req,res)=>{
