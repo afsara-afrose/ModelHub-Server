@@ -53,6 +53,17 @@ async function run() {
       });
     });
 
+    //using put api for putting updated data to mongodb
+    app.put('/update-model/:id',async (req,res)=>{
+        const {id}=req.params
+        const data=req.body
+        console.log(data)
+        const objectId = new ObjectId(id);
+        
+      const result = await modelCollection.updateOne();
+        
+    })
+
 
    
   } finally {
