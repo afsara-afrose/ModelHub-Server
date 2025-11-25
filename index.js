@@ -40,6 +40,19 @@ async function run() {
       });
     });
 
+    
+    //For  single Model Model Details page
+    app.get("/models/:id", async (req, res) => {
+      const { id } = req.params;
+      console.log(id);
+      const objectId = new ObjectId(id);
+      const result = await modelCollection.findOne({ _id: objectId });
+      res.send({
+        success: true,
+        result,
+      });
+    });
+
 
    
   } finally {
