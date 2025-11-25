@@ -29,6 +29,18 @@ async function run() {
       res.send(result);
     });
 
+    //ADD get api for collecting data  from client to server
+    app.post("/add-model", async (req, res) => {
+      const newModel = req.body;
+      console.log("Received Model", newModel);
+      const result = await modelCollection.insertOne(newModel);
+      res.send({
+        success: true,
+        result,
+      });
+    });
+
+
    
   } finally {
     // await client.close();
@@ -45,9 +57,4 @@ app.listen(port, () => {
 });
 
 
-//git init
-// git add README.md
-// git commit -m "first commit"
-// git branch -M main
-// git remote add origin https://github.com/afsara-afrose/ModelHub-Server.git
-// git push -u origin main
+
