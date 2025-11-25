@@ -73,6 +73,20 @@ async function run() {
         
     })
 
+    //Delete Model
+    app.delete('/models/:id',async(req,res)=>{
+        const {id}=req.params
+         const objectId = new ObjectId(id);
+         const result = await modelCollection.deleteOne({_id:objectId});
+         res.send({
+            success:true,
+            result
+         })
+
+
+    })
+
+
 
    
   } finally {
