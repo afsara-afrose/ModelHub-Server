@@ -23,7 +23,7 @@ async function run() {
     await client.connect();
     const db = client.db("AIModelHub");
     const modelCollection = db.collection("models");
-    const modelPurchaseCollection =db.collection('purchase-model')
+    const modelPurchaseCollection = db.collection("purchase-model");
 
     app.get("/models", async (req, res) => {
       const result = await modelCollection.find().toArray();
@@ -41,7 +41,6 @@ async function run() {
       });
     });
 
-    
     //For  single Model Model Details page
     app.get("/models/:id", async (req, res) => {
       const { id } = req.params;
@@ -55,62 +54,84 @@ async function run() {
     });
 
     //using put api for putting updated data to mongodb
-    app.put('/update-model/:id',async (req,res)=>{
-        const {id}=req.params
-        const data=req.body
-        console.log(data)
-        const objectId = new ObjectId(id);
-        const filter={_id:objectId}
-        const update={
-            $set:data
-        }
-        
-      const result = await modelCollection.updateOne(filter,update);
+    app.put("/update-model/:id", async (req, res) => {
+      const { id } = req.params;
+      const data = req.body;
+      console.log(data);
+      const objectId = new ObjectId(id);
+      const filter = { _id: objectId };
+      const update = {
+        $set: data,
+      };
+
+      const result = await modelCollection.updateOne(filter, update);
       res.send({
-        success:true,
+        success: true,
         result,
+      });
+    });
+    //my model page
+    app.get("/my-models", async (req, res) => {
+      const email = req.query.email;
+      const result = await modelCollection.find({ createdBy: email }).toArray();
+      res.send({
+        success: true,
+        result,
+      });
+    });
 
-      })
-        
-    })
-    //my model page 
-    app.get('/my-models',async(req,res)=>{
-        const email=req.query.email
-        const result =await modelCollection.find({createdBy:email}).toArray()
-        res.send({
-            success:true,
-            result
-         })
-    })
+    // Model Purchase Collection
+    app.post("/model-purchase/:id", async (req, res) => {
+      const data = req.body;
+      const id = req.params.id;
 
-    //Model Purchase Collection
+      // FIXED HERE
+      const filter = { _id: new ObjectId(id) };
 
-    app.post('/model-purchase',async(req,res)=>{
-        const data=req.body;
+      const update = {
+        $inc: {
+          purchased: 1,
+        },
+      };
 
-        const result= await modelPurchaseCollection.insertOne(data)
-         res.send({
-            success:true,
-            result
-         })
-    })
+      const result = await modelPurchaseCollection.insertOne(data);
+      const purchaseCount = await modelCollection.updateOne(filter, update);
+
+      res.send({
+        success: true,
+        result,
+        purchaseCount,
+      });
+    });
+
+    // my purchases
+    app.get("/my-purchases", async (req, res) => {
+      const email = req.query.email;
+      const result = await modelPurchaseCollection
+        .find({ purchasedBy: email })
+        .toArray();
+      res.send({
+        success: true,
+        result,
+      });
+    });
 
     //Delete Model
-    app.delete('/models/:id',async(req,res)=>{
-        const {id}=req.params
-         const objectId = new ObjectId(id);
-         const result = await modelCollection.deleteOne({_id:objectId});
-         res.send({
-            success:true,
-            result
-         })
+    app.delete("/models/:id", async (req, res) => {
+      const { id } = req.params;
+      const objectId = new ObjectId(id);
+      const result = await modelCollection.deleteOne({ _id: objectId });
+      res.send({
+        success: true,
+        result,
+      });
+    });
 
-
+    app.get('/search',async(req,res)=>{
+        const search_text=req.query.search
+        const result =await modelCollection.find({name: {$regex: search_text, $options: "i"}}).toArray()
+          res.send(result)
     })
-
-
-
-   
   } finally {
     // await client.close();
   }
@@ -124,6 +145,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
-
-
-
