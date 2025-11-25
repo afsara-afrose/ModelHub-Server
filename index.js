@@ -23,6 +23,7 @@ async function run() {
     await client.connect();
     const db = client.db("AIModelHub");
     const modelCollection = db.collection("models");
+    const modelPurchaseCollection =db.collection('purchase-model')
 
     app.get("/models", async (req, res) => {
       const result = await modelCollection.find().toArray();
@@ -77,6 +78,18 @@ async function run() {
         const email=req.query.email
         const result =await modelCollection.find({createdBy:email}).toArray()
         res.send({
+            success:true,
+            result
+         })
+    })
+
+    //Model Purchase Collection
+
+    app.post('/model-purchase',async(req,res)=>{
+        const data=req.body;
+
+        const result= await modelPurchaseCollection.insertOne(data)
+         res.send({
             success:true,
             result
          })
