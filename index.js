@@ -3,12 +3,14 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const port = 3000;
+require("dotenv").config()
 
 app.use(cors());
 app.use(express.json());
 
+
 const uri =
-  "mongodb+srv://AIModelHub:qjryPmCLcBMiB7G3@cluster0.l0hikio.mongodb.net/?appName=Cluster0";
+  `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.l0hikio.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -20,7 +22,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const db = client.db("AIModelHub");
     const modelCollection = db.collection("models");
     const modelPurchaseCollection = db.collection("purchase-model");
@@ -81,28 +83,40 @@ async function run() {
     });
 
     // Model Purchase Collection
-    app.post("/model-purchase/:id", async (req, res) => {
-      const data = req.body;
-      const id = req.params.id;
+    // Model Purchase Collection
+app.post("/model-purchase/:id", async (req, res) => {
+  
+  const data = req.body;     // purchasedBy, name, image
+  const id = req.params.id;
 
-      // FIXED HERE
-      const filter = { _id: new ObjectId(id) };
+  const filter = { _id: new ObjectId(id) };
 
-      const update = {
-        $inc: {
-          purchased: 1,
-        },
-      };
+  const update = {
+    $inc: { purchased: 1 },     // Increase purchase count
+  };
 
-      const result = await modelPurchaseCollection.insertOne(data);
-      const purchaseCount = await modelCollection.updateOne(filter, update);
+  // Save purchase in purchase collection
+  const purchaseDoc = {
+    modelId: new ObjectId(id),
+    purchasedBy: data.purchasedBy,
+    name: data.name,
+    image: data.image,
+    framework: data.framework,
+    useCase: data.useCase,
+    createdBy: data.createdBy,
+  };
 
-      res.send({
-        success: true,
-        result,
-        purchaseCount,
-      });
-    });
+  const result = await modelPurchaseCollection.insertOne(purchaseDoc);
+
+  // Update purchase count in Models collection
+  const purchaseCount = await modelCollection.updateOne(filter, update);
+
+  res.send({
+    success: true,
+    result,
+    purchaseCount,
+  });
+});
 
     // my purchases
     app.get("/my-purchases", async (req, res) => {
@@ -127,11 +141,37 @@ async function run() {
       });
     });
 
-    app.get('/search',async(req,res)=>{
-        const search_text=req.query.search
-        const result =await modelCollection.find({name: {$regex: search_text, $options: "i"}}).toArray()
-          res.send(result)
-    })
+  app.get('/search', async (req, res) => {
+  try {
+    const search_text = req.query.search || "";
+    const framework = req.query.framework || "";
+
+    // Build query dynamically
+    const query = {};
+
+    if (search_text) {
+      query.name = { $regex: search_text, $options: "i" };
+    }
+
+    if (framework) {
+      query.framework = { $regex: `^${framework}$`, $options: "i" }; // exact match, case-insensitive
+    }
+
+    const result = await modelCollection.find(query).toArray();
+    res.send(result);
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).send({ success: false, message: "Server Error" });
+  }
+});
+
+app.get('/latest-models',async(req,res)=>{
+    const result=await modelCollection.find().sort({createdAt:'desc'}).limit(6).toArray()
+    console.log(result)
+        res.send(result)
+   });
+
+
   } finally {
     // await client.close();
   }
